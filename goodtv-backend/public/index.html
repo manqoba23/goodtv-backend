@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>GOODTV Voice Curator</title>
+  <style>
+    body {
+      background: linear-gradient(to bottom, #000000, #111);
+      margin: 0;
+      font-family: 'Courier New', monospace;
+      color: #00ffcc;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+
+    #orb {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #00ffcc, #007e7e);
+      box-shadow: 0 0 30px #00ffcc, 0 0 60px #007e7e;
+      animation: pulse 2s infinite;
+      cursor: pointer;
+      z-index: 2;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 0.9; }
+      50% { transform: scale(1.15); opacity: 1; }
+    }
+
+    #waveform {
+      display: flex;
+      gap: 6px;
+      margin-top: 20px;
+      height: 30px;
+      align-items: center;
+    }
+
+    .bar {
+      width: 8px;
+      height: 10px;
+      background: #00ffcc;
+      border-radius: 2px;
+      animation: bounce 1s infinite ease-in-out alternate;
+    }
+
+    .bar:nth-child(2) { animation-delay: 0.2s; }
+    .bar:nth-child(3) { animation-delay: 0.4s; }
+    .bar:nth-child(4) { animation-delay: 0.6s; }
+    .bar:nth-child(5) { animation-delay: 0.8s; }
+
+    @keyframes bounce {
+      from { height: 10px; }
+      to { height: 30px; }
+    }
+
+    #transcript {
+      position: absolute;
+      bottom: 40px;
+      width: 90%;
+      max-height: 50vh;
+      overflow-y: auto;
+      font-size: 1rem;
+      text-align: center;
+    }
+
+    .line {
+      opacity: 0;
+      animation: reveal 0.4s forwards;
+    }
+
+    @keyframes reveal {
+      to { opacity: 1; }
+    }
+
+    ::-webkit-scrollbar { display: none; }
+  </style>
+</head>
+<body>
+
+  <div id="orb"></div>
+  <div id="waveform">
+    <div class="bar"></div>
+    <div class="bar"></div>
+    <div class="bar"></div>
+    <div class="bar"></div>
+    <div class="bar"></div>
+  </div>
+  <div id="transcript"></div>
+
+  <script>
+    const orb = document.getElementById("orb");
+    const transcriptEl = document.getElementById("transcript");
+    const waveform = document.getElementById("waveform");
+
+    let mediaRecorder;
+    let chunks = [];
+
+    function addLine(text) {
+      const div = document.createElement("div");
+      div.textContent = `> ${text}`;
+      div.className = "line";
+      transcriptEl.appendChild(div);
+      transcriptEl.scrollTop = transcriptEl.scrollHeight;
+    }
+
+    function animateOrb(active) {
+      orb.style.boxShadow = active ?
+        "0 0 50px #00ffcc, 0 0 100px #007e7e" :
+        "0 0 30px #00ffcc, 0 0 60px #007e7e";
+      orb.style.transform = active ? "scale(1.3)" : "scale(1)";
+      waveform.style.opacity = active ? "1" : "0.3";
+    }
+
+    async function startRecording() {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorder = new MediaRecorder(stream);
+      chunks = [];
+
+      mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
+      mediaRecorder.onstop = async () => {
+        animateOrb(false);
+
+        const blob = new Blob(chunks, { type: "audio/webm" });
+        const formData = new FormData();
+        formData.append("audio", blob, "voice.webm");
+
+        addLine("User: 🎙️ Recording sent...");
+
+        try {
+          const res = await fetch("/api/transcribe", {
+            method: "POST",
+            body: formData
+          });
+          const data = await res.json();
+          addLine("Curator: " + data.transcription);
+
+          // Auto-play response using ElevenLabs voice
+          const ttsRes = await fetch("/api/tts", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text: data.transcription })
+          });
+          const audioBlob = await ttsRes.blob();
+          const audioURL = URL.createObjectURL(audioBlob);
+          const audio = new Audio(audioURL);
+          audio.play();
+        } catch (err) {
+          addLine("Error: Transcription or TTS failed");
+        }
+      };
+
+      mediaRecorder.start();
+      animateOrb(true);
+      setTimeout(() => mediaRecorder.stop(), 5000); // Record for 5 seconds
+    }
+
+    orb.addEventListener("click", () => {
+      addLine("Listening...");
+      startRecording();
+    });
+  </script>
+
+</body>
+</html>
