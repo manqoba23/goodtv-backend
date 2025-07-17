@@ -1,4 +1,16 @@
 {
+  "name": "goodtv.ai",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
   "dependencies": {
     "@elevenlabs/elevenlabs-js": "^2.6.0",
     "axios": "^1.10.0",
@@ -7,16 +19,6 @@
     "cors": "^2.8.5",
     "express": "^5.1.0"
   },
-  "name": "goodtv.ai",
-  "version": "1.0.0",
-  "main": "server.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/manqoba23/goodtv-backend.git"
@@ -24,6 +26,5 @@
   "bugs": {
     "url": "https://github.com/manqoba23/goodtv-backend/issues"
   },
-  "homepage": "https://github.com/manqoba23/goodtv-backend#readme",
-  "description": ""
+  "homepage": "https://github.com/manqoba23/goodtv-backend#readme"
 }
